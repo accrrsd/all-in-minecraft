@@ -1,0 +1,12 @@
+-- while true do
+--   local event, param1 = os.pullEvent()
+--   if event == "redstone" then
+--       if rs.getInput("left") then
+--           os.queueEvent("key", 28)
+--       end
+--   elseif event == "key" then
+--       if param1 == 28 then
+--           print("Hello")
+--       end
+--   end
+-- end  

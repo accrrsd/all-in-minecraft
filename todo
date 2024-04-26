@@ -1,0 +1,8 @@
+1. Add command buffer (move leg and base to move forward - may require file buffer, because computer updated after thing move)
+1. Add move command 
+2. Add rotate command
+
+4. filter white list / black list mode
+
+
+ПРОВЕРКА НА СУЩЕСТВОВАНИЕ БУФЕРА ДВИЖЕНИЙ ЧЕРЕЗ FS.EXIST КУДА БЫСТРЕЕ ЧЕМ ЧИТАТЬ ЕГО ЗНАЧЕНИЯ (НАВЕРНОЕ)

@@ -1,0 +1,5 @@
+{
+  "Lua.diagnostics.disable": ["undefined-global", "undefined-field"],
+  "editor.defaultFormatter": "sumneko.lua",
+  "editor.formatOnSave": true
+}
