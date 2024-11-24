@@ -62,4 +62,8 @@ function WindowClass:impulse(x, y)
 	self.dirY = y
 end
 
+function WindowClass:getCenter()
+	return math.floor(self.width / 2) + 1, math.floor(self.height / 2) + 1
+end
+
 return WindowClass

@@ -43,7 +43,7 @@ end
 ---@param symY number (symbol)
 ---@return boolean
 local function _checkSymbolInBounds(symX, symY, symbols)
-	if symX <= 0 or symX > #symbols or symY <= 0 or symY > #symbols[symX] then
+	if symX < 1 or symX > #symbols or symY < 1 or symY > #symbols[symX] then
 		return false
 	end
 	return true

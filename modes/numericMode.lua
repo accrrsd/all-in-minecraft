@@ -1,159 +1,110 @@
--- term size is 26x20
+local function drawLayerBody(winObj, matrixToDraw, offset, layer, customColors)
+	local xCenter, yCenter = winObj:getCenter()
 
-local ScannerClass = require("api/scanner")
-local VisualLib = require("api/canvasLib/init")
-local WindowClass = VisualLib.WindowClass
+	local xCenter = xCenter + offset.x
+	local yCenter = yCenter + offset.y
 
-local currentLevel = 0
+	local xSize, ySize = winObj.win.getSize()
 
-local Xoffset = 1
-local Yoffset = 7
-
-local winObj = WindowClass:new(term.current(), Xoffset, Yoffset, 26 - Xoffset + 1, 20 - Yoffset + 1, true, false, 0.5)
-
-local scanner = ScannerClass:new("back", 16)
-
-local canHandleColors = winObj.win.isColour()
-
---- Usual you want you one of them, not both (tags and filter)
-
---- Less specific filter
--- local block_tags_filter = nil
--- local block_tags_filter = { "minecraft:block/forge:ores" }
-
---- More specific filter
--- local block_names_filter = nil
--- local block_names_filter = { "minecraft:iron_ore" }
-
---- colors
-local block_colors_by_name = {
-	["minecraft:iron_ore"] = colors.gray,
-	["minecraft:gold_ore"] = colors.orange,
-	["minecraft:redstone_ore"] = colors.red,
-	["minecraft:diamond_ore"] = colors.lightBlue,
-	["minecraft:emerald_ore"] = colors.green,
-	["minecraft:coal_ore"] = colors.brown,
-}
-
-local function check_block_tags(block)
-	if block_tags_filter and block.tags then
-		for _, tag in pairs(block.tags) do
-			for _, tag2 in pairs(block_tags_filter) do
-				if tag == tag2 then
-					return true
-				end
-			end
+	local axysBlocks = {}
+	for i = 0, xSize do
+		for j = 0, ySize do
+			axysBlocks[i .. j] = nil
 		end
 	end
-	return false
-end
 
-local function check_block_name(block)
-	if block.name then
-		for _, name in pairs(block_names_filter) do
-			if block.name == name then
-				return true
-			end
-		end
-	end
-	return false
-end
-
-local function write_with_colors(text, symX, symY, color)
-	if canHandleColors then
-		if color == nil then
-			color = colors.white
+	local function tryWriteColored(text, symX, symY, block)
+		local color = colors.white
+		if customColors and block and customColors[block.name] then
+			color = customColors[block.name]
 		end
 		winObj.win.setTextColor(color)
+		winObj.win.setCursorPos(symX, symY)
+		winObj.win.write(text)
+		winObj.win.setTextColor(colors.white)
 	end
-	winObj.win.setCursorPos(symX, symY)
-	winObj.win.write(text)
-	winObj.win.setTextColor(colors.white)
-end
 
-local function drawNumbers(target_level)
-	local windowCenterX, windowCenterY = (function()
-		local w, h = winObj.win.getSize()
-		return math.floor(w / 2), math.floor(h / 2)
-	end)()
+	if matrixToDraw[layer] then
+		for _, block in pairs(matrixToDraw[layer]) do
+			local symX = xCenter + block.x
+			local symY = yCenter + block.z
+			local value
+			local text
 
-	for level, levelContent in pairs(scanner.levels) do
-		if level == target_level then
-			for _, block in pairs(levelContent) do
-				local pass = true
-				if block_tags_filter then
-					pass = check_block_tags(block)
-				end
-				if block_names_filter then
-					pass = check_block_name(block)
-				end
-				if pass then
-					local symX = windowCenterX + block.x
-					local symY = windowCenterY + block.z
-					local text = math.min(math.abs(block.x) + math.abs(block.z), 9)
-					write_with_colors(text, symX, symY, block_colors_by_name[block.name])
-				end
+			if block.x == 0 or block.z == 0 then
+				axysBlocks[symX .. symY] = block
 			end
-		end
-	end
 
-	winObj.win.setCursorPos(windowCenterX, windowCenterY)
-	winObj.win.write(" ")
-end
-
-local function updateScreen()
-	term.clear()
-	winObj.win.clear()
-	local currentLevelStr = "Current level: " .. currentLevel
-	term.setCursorPos((26 - #currentLevelStr) / 2 + 1, 5)
-	term.write(currentLevelStr)
-	drawNumbers(currentLevel)
-end
-
-local function changeCurrentLevel(val)
-	if val > 0 and currentLevel + 1 <= #scanner.levels then
-		currentLevel = currentLevel + 1
-	elseif val < 0 then
-		local lowestLevel = math.huge
-		for level, levelContent in pairs(scanner.levels) do
-			if level < lowestLevel then
-				lowestLevel = level
+			-- prevent text bugging when fast change layers
+			if block.x == 0 and block.z ~= 0 then
+				text = "|"
+			elseif block.z == 0 and block.x ~= 0 then
+				text = "-"
 			end
-		end
-		if currentLevel - 1 >= lowestLevel then
-			currentLevel = currentLevel - 1
-		end
-	end
-end
 
-local function mainLoop()
-	while true do
-		local event, param1, param2 = os.pullEvent()
-		if event == "key" then
-			if param1 == keys.up then
-				local prevCurrentLevel = currentLevel
-				changeCurrentLevel(1)
-				if prevCurrentLevel ~= currentLevel then
-					updateScreen()
-				end
-			elseif param1 == keys.down then
-				local prevCurrentLevel = currentLevel
-				changeCurrentLevel(-1)
-				if prevCurrentLevel ~= currentLevel then
-					updateScreen()
-				end
-			elseif param1 == keys.backspace then
-				term.clear()
-				term.setCursorPos(1, 1)
-				return
-			elseif param1 == keys.enter then
-				scanner:scan()
-				updateScreen()
+			if block.z ~= 0 then
+				value = math.abs(block.x)
+			else
+				value = math.abs(block.z)
 			end
+
+			if not text then
+				text = value > 9 and "#" or value
+			end
+
+			tryWriteColored(text, symX, symY, block)
 		end
+	end
+
+	-- garantee that axys are always visible
+	for i = -math.floor(xSize / 2), math.floor(xSize / 2) do
+		local symX = xCenter + i
+		local symY = yCenter
+		tryWriteColored("-", symX, symY, axysBlocks[symX .. symY])
+	end
+
+	for j = -math.floor(ySize / 2), math.floor(ySize / 2) do
+		local symX = xCenter
+		local symY = yCenter + j
+		tryWriteColored("|", symX, symY, axysBlocks[symX .. symY])
+	end
+
+	tryWriteColored("+", xCenter, yCenter, axysBlocks[xCenter .. yCenter])
+end
+
+local Numeric = {}
+Numeric.__index = Numeric
+
+function Numeric:new(winObj)
+	local obj = {
+		winObj = winObj,
+		canHandleColors = winObj.win.isColour(),
+		offset = {
+			x = 0,
+			y = 0,
+		},
+	}
+	setmetatable(obj, self)
+	return obj
+end
+
+function Numeric:addOffset(offset)
+	self.offset.x = self.offset.x + offset.x
+	self.offset.y = self.offset.y + offset.y
+end
+
+function Numeric:setOffset(offset)
+	self.offset = offset
+end
+
+-- make that way, because of optimization reasons
+function Numeric:drawLayer(matrixToDraw, layer, customColors)
+	self.winObj.win.clear()
+	if self.canHandleColors then
+		drawLayerBody(self.winObj, matrixToDraw, self.offset, layer, customColors)
+	else
+		drawLayerBody(self.winObj, matrixToDraw, self.offset, layer)
 	end
 end
 
-scanner:scan()
-updateScreen()
-mainLoop()
+return Numeric
