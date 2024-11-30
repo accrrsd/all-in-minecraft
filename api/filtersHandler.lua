@@ -83,6 +83,7 @@ function FiltersHandler:new()
 	obj.symbol_by_name = loadJsonFromFile("settings/symbolByName.json")
 	obj.block_tags_filter = loadJsonFromFile("settings/tagsFilter.json")
 	obj.block_names_filter = loadJsonFromFile("settings/nameFilter.json")
+	obj.defaults = loadJsonFromFile("settings/defaults.json")
 
 	return setmetatable(obj, self)
 end

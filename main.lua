@@ -7,13 +7,15 @@ local MatrixHandlerClass = require("api/matrixHandler")
 local WindowClass = VisualLib.WindowClass
 local FiltersHandlerClass = require("api/filtersHandler")
 
-local scanner = ScannerClass:new("back", 16)
+local matrixHandler = MatrixHandlerClass:new()
+local filtersHandler = FiltersHandlerClass:new()
+
+local scanner = ScannerClass:new("back", filtersHandler.defaults.scanRadius)
 
 -- that variable use for proper retrun from help mode
-local lastMode = "numeric"
-local mode = "numeric"
-
-local autoRotate = true
+local lastMode = filtersHandler.defaults.mode
+local mode = filtersHandler.defaults.mode
+local autoRotate = filtersHandler.defaults.autoRotate
 
 local numericWin = (function()
 	local Xoffset = 1
@@ -47,12 +49,9 @@ end)()
 
 local helpWin = (function()
 	local Xoffset = 1
-	local Yoffset = 4
+	local Yoffset = 3
 	return WindowClass:new(term.current(), Xoffset, Yoffset, 26 - Xoffset + 1, 20 - Yoffset + 1, false, true, 0.5)
 end)()
-
-local matrixHandler = MatrixHandlerClass:new()
-local filtersHandler = FiltersHandlerClass:new()
 
 local numeric = NumericClass:new(numericWin)
 local relief = ReliefClass:new(reliefWin)
@@ -110,12 +109,16 @@ local function drawActiveScreen()
 		helpWin.win.setCursorPos(1, 9)
 		helpWin.win.write("numeric mode")
 		helpWin.win.setCursorPos(1, 11)
-		helpWin.win.write("Arrow keys - rotate matrix")
+		helpWin.win.write("Arrow keys:")
+		helpWin.win.setCursorPos(1, 12)
+		helpWin.win.write("left-right - rotate matrix")
 		helpWin.win.setCursorPos(1, 13)
+		helpWin.win.write("up-down - change level")
+		helpWin.win.setCursorPos(1, 15)
 		helpWin.win.write("R - change autoRotate")
-		helpWin.win.setCursorPos(1, 14)
-		helpWin.win.write("current: " .. tostring(autoRotate))
 		helpWin.win.setCursorPos(1, 16)
+		helpWin.win.write("current: " .. tostring(autoRotate))
+		helpWin.win.setCursorPos(1, 18)
 		helpWin.win.write("Use h or space to leave")
 	end
 
