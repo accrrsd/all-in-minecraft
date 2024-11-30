@@ -11,6 +11,9 @@ function Relief:new(winObj)
 	return obj
 end
 
+--- draw layer on canvas
+---@param matrixToDraw table scan from scanner, sorted by level
+---@param layer number
 function Relief:drawLayer(matrixToDraw, layer)
 	local centerX, centerY = self.winObj.canvas:getPixelCordsCenter()
 	local count = 0

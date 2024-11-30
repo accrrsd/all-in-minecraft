@@ -1,5 +1,8 @@
-local function drawLayerBody(winObj, matrixToDraw, offset, layer, customColors)
+local function drawLayerBody(winObj, matrixToDraw, offset, layer, customColors, symbolByName)
 	local xCenter, yCenter = winObj:getCenter()
+
+	local xC = xCenter
+	local yC = yCenter
 
 	local xCenter = xCenter + offset.x
 	local yCenter = yCenter + offset.y
@@ -48,6 +51,10 @@ local function drawLayerBody(winObj, matrixToDraw, offset, layer, customColors)
 				value = math.abs(block.z)
 			end
 
+			if not text and symbolByName and symbolByName[block.name] then
+				text = symbolByName[block.name]
+			end
+
 			if not text then
 				text = value > 9 and "#" or value
 			end
@@ -57,13 +64,13 @@ local function drawLayerBody(winObj, matrixToDraw, offset, layer, customColors)
 	end
 
 	-- garantee that axys are always visible
-	for i = -math.floor(xSize / 2), math.floor(xSize / 2) do
+	for i = -xC, xC + 1 do
 		local symX = xCenter + i
 		local symY = yCenter
 		tryWriteColored("-", symX, symY, axysBlocks[symX .. symY])
 	end
 
-	for j = -math.floor(ySize / 2), math.floor(ySize / 2) do
+	for j = -yC, yC + 1 do
 		local symX = xCenter
 		local symY = yCenter + j
 		tryWriteColored("|", symX, symY, axysBlocks[symX .. symY])
@@ -88,22 +95,30 @@ function Numeric:new(winObj)
 	return obj
 end
 
+--- added offset to current offset
+---@param offset {x: number, y: number}
 function Numeric:addOffset(offset)
 	self.offset.x = self.offset.x + offset.x
 	self.offset.y = self.offset.y + offset.y
 end
 
+--- set new offset
+---@param offset {x: number, y: number}
 function Numeric:setOffset(offset)
 	self.offset = offset
 end
 
 -- make that way, because of optimization reasons
-function Numeric:drawLayer(matrixToDraw, layer, customColors)
+--- draw numeric layer
+---@param matrixToDraw table scan from scanner, sorted by level
+---@param layer number
+---@param customColors table
+function Numeric:drawLayer(matrixToDraw, layer, customColors, symbolByName)
 	self.winObj.win.clear()
 	if self.canHandleColors then
-		drawLayerBody(self.winObj, matrixToDraw, self.offset, layer, customColors)
+		drawLayerBody(self.winObj, matrixToDraw, self.offset, layer, customColors, symbolByName)
 	else
-		drawLayerBody(self.winObj, matrixToDraw, self.offset, layer)
+		drawLayerBody(self.winObj, matrixToDraw, self.offset, layer, nil, symbolByName)
 	end
 end
 

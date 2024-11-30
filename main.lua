@@ -3,12 +3,15 @@ local ScannerClass = require("api/scanner")
 local NumericClass = require("modes/numericMode")
 local ReliefClass = require("modes/reliefMode")
 local VisualLib = require("api/canvasLib/init")
-local MatrixHandler = require("api/matrixHandler")
+local MatrixHandlerClass = require("api/matrixHandler")
 local WindowClass = VisualLib.WindowClass
+local FiltersHandlerClass = require("api/filtersHandler")
 
 local scanner = ScannerClass:new("back", 16)
+
+-- that variable use for proper retrun from help mode
+local lastMode = "numeric"
 local mode = "numeric"
-local matrixHandler = MatrixHandler:new()
 
 local autoRotate = true
 
@@ -42,67 +45,30 @@ local reliefWin = (function()
 	)
 end)()
 
+local helpWin = (function()
+	local Xoffset = 1
+	local Yoffset = 4
+	return WindowClass:new(term.current(), Xoffset, Yoffset, 26 - Xoffset + 1, 20 - Yoffset + 1, false, true, 0.5)
+end)()
+
+local matrixHandler = MatrixHandlerClass:new()
+local filtersHandler = FiltersHandlerClass:new()
+
 local numeric = NumericClass:new(numericWin)
 local relief = ReliefClass:new(reliefWin)
 
---- colors
-local block_colors_by_name = {
-	["minecraft:iron_ore"] = colors.lightGray,
-	["minecraft:deepslate_iron_ore"] = colors.lightGray,
-	["minecraft:gold_ore"] = colors.orange,
-	["minecraft:deepslate_gold_ore"] = colors.orange,
-	["minecraft:redstone_ore"] = colors.red,
-	["minecraft:deepslate_redstone_ore"] = colors.red,
-	["minecraft:diamond_ore"] = colors.lightBlue,
-	["minecraft:deepslate_diamond_ore"] = colors.lightBlue,
-	["minecraft:emerald_ore"] = colors.green,
-	["minecraft:deepslate_emerald_ore"] = colors.green,
-	["minecraft:coal_ore"] = colors.gray,
-	["minecraft:deepslate_coal_ore"] = colors.gray,
-	["minecraft:copper_ore"] = colors.brown,
-	["minecraft:deepslate_copper_ore"] = colors.brown,
-}
-
--- less specific filter
-local block_tags_filter = nil
--- more specific filter
-local block_names_filter = nil
-
---- examples
---- Usual you want you one of them, not both (tags and filter)
--- local block_tags_filter = { "minecraft:block/forge:ores" }
--- local block_names_filter = { "minecraft:iron_ore" }
-
-local function check_block_tags(block)
-	if block_tags_filter and block.tags then
-		for _, tag in pairs(block.tags) do
-			for _, tag2 in pairs(block_tags_filter) do
-				if tag == tag2 then
-					return true
-				end
-			end
-		end
-	end
-	return false
-end
-
-local function check_block_name(block)
-	if block.name then
-		for _, name in pairs(block_names_filter) do
-			if block.name == name then
-				return true
-			end
-		end
-	end
-	return false
-end
-
 local function updateTitle()
 	local width, height = term.getSize()
-	local title = "X-Vision: " .. mode
+	local title = "X-Vision"
 	term.setCursorPos(math.floor((width - #title) / 2) + 1, 1)
 	term.clearLine()
 	term.write(title)
+	term.setCursorPos(1, 2)
+	term.clearLine()
+	term.write("mode: " .. mode)
+	local helpText = "[H]elp"
+	term.setCursorPos(math.floor(width - #helpText), 2)
+	term.write(helpText)
 	term.setCursorPos(1, 3)
 	term.clearLine()
 	local dirs = matrixHandler.directions[matrixHandler.directionIndex]
@@ -126,9 +92,41 @@ end
 
 local function drawActiveScreen()
 	local rotatedMatrix, currentLevel = matrixHandler:getCurrentMatrix()
+
+	if mode == "help" then
+		local width, height = helpWin.win.getSize()
+		local welcome = "Welcome to X-Vision!"
+		helpWin.win.clear()
+		helpWin.win.setCursorPos(math.floor((width - #welcome) / 2) + 1, 3)
+		helpWin.win.write(welcome)
+		helpWin.win.setCursorPos(1, 5)
+		helpWin.win.write("Enter - scan area")
+		helpWin.win.setCursorPos(1, 6)
+		helpWin.win.write("Backspace - exit program")
+		helpWin.win.setCursorPos(1, 7)
+		helpWin.win.write("Space - switch mode")
+		helpWin.win.setCursorPos(1, 8)
+		helpWin.win.write("W, A, S, D - move in")
+		helpWin.win.setCursorPos(1, 9)
+		helpWin.win.write("numeric mode")
+		helpWin.win.setCursorPos(1, 11)
+		helpWin.win.write("Arrow keys - rotate matrix")
+		helpWin.win.setCursorPos(1, 13)
+		helpWin.win.write("R - change autoRotate")
+		helpWin.win.setCursorPos(1, 14)
+		helpWin.win.write("current: " .. tostring(autoRotate))
+		helpWin.win.setCursorPos(1, 16)
+		helpWin.win.write("Use h or space to leave")
+	end
+
 	if rotatedMatrix then
 		if mode == "numeric" then
-			numeric:drawLayer(rotatedMatrix, currentLevel, block_colors_by_name)
+			numeric:drawLayer(
+				rotatedMatrix,
+				currentLevel,
+				filtersHandler.block_colors_by_name,
+				filtersHandler.symbol_by_name
+			)
 		elseif mode == "relief" then
 			relief:drawLayer(rotatedMatrix, currentLevel)
 		end
@@ -141,6 +139,7 @@ local function mainLoop()
 		if key == keys.enter then
 			local scanRes = scanner:scan()
 			if scanRes then
+				scanRes = filtersHandler:filter_by_tags_and_name(scanRes)
 				matrixHandler:loadMatrix(scanner:sortScanByLevel(scanRes))
 				if autoRotate and scanner.prevScan then
 					local dir = scanner:determineDirections()
@@ -150,6 +149,22 @@ local function mainLoop()
 				end
 				numeric:setOffset({ x = 0, y = 0 })
 				updateTitle()
+				drawActiveScreen()
+			end
+		elseif key == keys.h then
+			if mode == "help" then
+				mode = lastMode
+			else
+				mode = "help"
+			end
+			numericWin.win.setVisible(mode == "numeric")
+			reliefWin.win.setVisible(mode == "relief")
+			helpWin.win.setVisible(mode == "help")
+			updateTitle()
+			drawActiveScreen()
+		elseif key == keys.r then
+			autoRotate = not autoRotate
+			if mode == "help" then
 				drawActiveScreen()
 			end
 		elseif key == keys.right then
@@ -171,18 +186,27 @@ local function mainLoop()
 				drawActiveScreen()
 			end
 		elseif key == keys.w then
-			numeric:addOffset({ x = 0, y = 3 })
-			drawActiveScreen()
+			if mode == "numeric" then
+				numeric:addOffset({ x = 0, y = 3 })
+				drawActiveScreen()
+			end
 		elseif key == keys.a then
-			numeric:addOffset({ x = 3, y = 0 })
-			drawActiveScreen()
+			if mode == "numeric" then
+				numeric:addOffset({ x = 3, y = 0 })
+				drawActiveScreen()
+			end
 		elseif key == keys.s then
-			numeric:addOffset({ x = 0, y = -3 })
-			drawActiveScreen()
+			if mode == "numeric" then
+				numeric:addOffset({ x = 0, y = -3 })
+				drawActiveScreen()
+			end
 		elseif key == keys.d then
-			numeric:addOffset({ x = -3, y = 0 })
-			drawActiveScreen()
+			if mode == "numeric" then
+				numeric:addOffset({ x = -3, y = 0 })
+				drawActiveScreen()
+			end
 		elseif key == keys.space then
+			lastMode = mode
 			mode = (mode == "numeric") and "relief" or "numeric"
 			numericWin.win.setVisible(mode == "numeric")
 			reliefWin.win.setVisible(mode == "relief")

@@ -1,0 +1,19 @@
+{
+  "minecraft:iron_ore": "lightGray",
+  "minecraft:deepslate_iron_ore": "lightGray",
+  "minecraft:gold_ore": "orange",
+  "minecraft:deepslate_gold_ore": "orange",
+  "minecraft:redstone_ore": "red",
+  "minecraft:deepslate_redstone_ore": "red",
+  "minecraft:diamond_ore": "lightBlue",
+  "minecraft:deepslate_diamond_ore": "lightBlue",
+  "minecraft:emerald_ore": "green",
+  "minecraft:deepslate_emerald_ore": "green",
+  "minecraft:coal_ore": "gray",
+  "minecraft:deepslate_coal_ore": "gray",
+  "minecraft:copper_ore": "brown",
+  "minecraft:deepslate_copper_ore": "brown",
+  "minecraft:lava": "red",
+  "minecraft:water": "blue",
+  "minecraft:fire": "orange"
+}

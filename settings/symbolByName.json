@@ -1,0 +1,6 @@
+{
+  "minecraft:lava": "L",
+  "minecraft:water": "W",
+  "minecraft:fire": "F",
+  "minecraft:bedrock": "B"
+}

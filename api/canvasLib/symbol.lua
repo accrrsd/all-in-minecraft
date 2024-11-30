@@ -11,10 +11,8 @@ SymbolClass.__index = SymbolClass
 ---@param symY number (symbol)
 ---@param textColor check color docs
 ---@param bgColor check color docs
+---@return SymbolClass
 function SymbolClass:new(display, symX, symY, textColor, bgColor)
-	local obj = {}
-	setmetatable(obj, self)
-
 	if not textColor then
 		textColor = colors.white
 	end
@@ -23,15 +21,19 @@ function SymbolClass:new(display, symX, symY, textColor, bgColor)
 		bgColor = colors.black
 	end
 
-	obj.textColor = textColor
-	obj.bgColor = bgColor
-	obj.pixels = PixelsClass:new(symX, symY)
-	obj.display = display
-	obj.char = " "
-	obj.invert = false
-	return obj
+	local obj = {
+		textColor = textColor,
+		bgColor = bgColor,
+		pixels = PixelsClass:new(symX, symY),
+		display = display,
+		char = " ",
+		invert = false,
+	}
+
+	return setmetatable(obj, self)
 end
 
+--- apply changes to symbol data
 function SymbolClass:update()
 	local char = 128
 	local pData = self.pixels.data
@@ -53,6 +55,7 @@ function SymbolClass:update()
 	self.char = string.char(char)
 end
 
+--- draw symbol
 function SymbolClass:draw()
 	if self.invert then
 		self.display.setBackgroundColor(self.textColor)
@@ -64,6 +67,7 @@ function SymbolClass:draw()
 	self.display.write(self.char)
 end
 
+--- clear symbol data and redraw
 function SymbolClass:clear()
 	self.display.setBackgroundColor(self.bgColor)
 	self.display.setTextColor(self.bgColor)

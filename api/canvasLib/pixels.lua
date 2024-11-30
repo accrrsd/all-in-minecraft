@@ -1,30 +1,31 @@
---- that class provide a simple interface for pixel (1/6 of a symbol)
+--- that class provide a simple interface for pixel (1/6 of a symbol in vertical and 1/2 pf a symbol in horizontal) operations
+
 local PixelsClass = {}
 PixelsClass.__index = PixelsClass
 
 ---@param symX number (symbol)
 ---@param symY number (symbol)
+---@return PixelsClass
 function PixelsClass:new(symX, symY)
-	local obj = {}
-	setmetatable(obj, self)
-
-	obj.symX = symX
-	obj.symY = symY
-	obj.data = {
-		-- left side
-		{
-			{ x = symX, y = symY - 1, active = false },
-			{ x = symX, y = symY, active = false },
-			{ x = symX, y = symY + 1, active = false },
-		},
-		-- right side
-		{
-			{ x = symX + 1, y = symY - 1, active = false },
-			{ x = symX + 1, y = symY, active = false },
-			{ x = symX + 1, y = symY + 1, active = false },
+	local obj = {
+		symX = symX,
+		symY = symY,
+		data = {
+			-- left side
+			{
+				{ x = symX, y = symY - 1, active = false },
+				{ x = symX, y = symY, active = false },
+				{ x = symX, y = symY + 1, active = false },
+			},
+			-- right side
+			{
+				{ x = symX + 1, y = symY - 1, active = false },
+				{ x = symX + 1, y = symY, active = false },
+				{ x = symX + 1, y = symY + 1, active = false },
+			},
 		},
 	}
-	return obj
+	return setmetatable(obj, self)
 end
 
 ---@param column number (pixel in symbol, like 1,2)

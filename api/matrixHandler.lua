@@ -73,7 +73,6 @@ end
 ---@return table
 function MatrixHandler:rotateMatrix()
 	if not self.matrix then
-		print("[ERROR] rotateMatrix: matrix is not loaded")
 		return nil
 	end
 
