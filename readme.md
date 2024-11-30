@@ -12,9 +12,16 @@ Modes are switched by pressing the spacebar, and the help menu opens with the 'h
 The program automatically tries to determine the leading axis based on the character's movement. However, if the character has moved far or has only scanned once, this may not work (since the program operates without GPS, it can only determine direction based on already scanned areas). You can also manually rotate the axes using the arrow keys. For accurate distance display, it's recommended to align the axis with the character's view. You can open the F3 menu to check the correct axis; the axes in the program are oriented the same way as in the world, so there should be no issues.
 
 You can toggle automatic direction detection with the 'R' key, and you can check the current mode in the help menu.
+## Settings
+### defaults
+These settings define the standard value of the variables:
+- **scanRadius** - default is max, max = 16, min = 1, more blocks - more laggy and energy cost scanner is, but pocket computer dont have energy, so it can be max without debuffs.
+- **autoRotate** - default is true, if false autoRotate would be disable from start, sometimes you dont need it, or it can work buggy for you - here you can disable it.
+- **mode** - default is numeric, can be relief or help.
+- **firstScan** - default is false, if true program will immediately scan after start.
 
-## Filters:
-X-vision has 4 filters:
+### Filters:
+X-vision have 4 filters:
 - **colorByName** - Uses a specific color if the name matches.
 - **symbolByName** - Changes the symbol drawn to represent the block, determined by the name.
 - **nameFilter** - Hides all blocks except those whose names are specified in the filter.
