@@ -224,5 +224,15 @@ local function mainLoop()
 end
 
 term.clear()
-updateTitle()
+if filtersHandler.defaults.firstScan then
+	local scanRes = scanner:scan()
+	if scanRes then
+		scanRes = filtersHandler:filter_by_tags_and_name(scanRes)
+		matrixHandler:loadMatrix(scanner:sortScanByLevel(scanRes))
+		updateTitle()
+		drawActiveScreen()
+	end
+else
+	updateTitle()
+end
 mainLoop()

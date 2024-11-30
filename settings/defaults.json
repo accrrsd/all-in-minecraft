@@ -1,5 +1,6 @@
 {
   "mode": "numeric",
   "scanRadius": 16,
-  "autoRotate": true
+  "autoRotate": true,
+  "firstScan": true
 }
