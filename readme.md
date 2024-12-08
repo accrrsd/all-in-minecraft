@@ -9,6 +9,7 @@ Modes are switched by pressing the spacebar, and the help menu opens with the 'h
 - **numeric** - Displays blocks as symbols, usually indicating the distance to the block relative to the leading axis (the direction the character is facing; more on this later). All filters apply to this mode.
 - **relief** - Provides an overview of the landscape. Due to how the canvas mechanics work, blocks cannot be colored in this mode, but it takes up 2-3 times less space on the screen. Think of it as a zoom-out mode.
 - **help** - Shows basic hotkeys for controlling the program; it's just a simple help menu.
+- **p-numeric** - Like numeric mode, but shows all layers at once, blocks are stacked on top of each other in priority, the higher the priority, the more likely the block will be displayed on the matrix, after destroying the block and scanning, the next block will be tracked in priority
 
 ## Axis:
 
@@ -22,19 +23,25 @@ You can toggle automatic direction detection with the 'R' key, and you can check
 
 These settings define the standard value of the variables:
 
-- **mode** - default is numeric, can be relief or help.
+- **mode** - default is numeric, can be any other mode.
 - **scanRadius** - default is max, max = 16, min = 1, more blocks - more laggy and energy cost scanner is, but pocket computer dont have energy, so it can be max without debuffs.
 - **autoRotate** - default is true, if false autoRotate would be disable from start, sometimes you dont need it, or it can work buggy for you - here you can disable it.
 - **firstScan** - default is true, if true program will immediately scan after start.
+- **heightMode** - default is down, can be up, determine direction for p-numeric display.
 
 ### Filters:
 
-X-vision have 4 filters:
+X-vision have 4 + 2 filters:
 
 - **colorByName** - Uses a specific color if the name matches.
 - **symbolByName** - Changes the symbol drawn to represent the block, determined by the name.
 - **nameFilter** - Hides all blocks except those whose names are specified in the filter.
 - **tagsFilter** - Hides all blocks except those that match AT LEAST ONE of the provided tags.
+
+And two additional filters only for priority mode:
+
+- **priorityByName** - Uses a numeric key and string (NBT name) value, set priority by name for p-numeric mode.
+- **priorityByTags** - Uses a numeric key and string (tags) value, set priority by matching tags for p-numeric mode.
 
 In most cases, I recommend using the color and symbol filters. However, if you want to strictly limit displayed values or if your screen does not support color, narrower filters may be useful.
 
@@ -64,17 +71,20 @@ Filters are configured similarly, but it's important to clarify how they work. T
 ### Using nameFilter and tagsFilter:
 
 - Usually, you want to use one of them, not both.
-- Both filters use empty keys and NBT values. For example:
-  - `"": "minecraft:block/forge:ores"` - this filter would show only blocks that match.
-  - For names, you can use `"": "minecraft:diamond_ore"` to display only diamond ores.
+- Both filters use NBT keys and empty values. For example:
+  - `"minecraft:block/forge:ores":""` - this filter would show only blocks that match.
+  - For names, you can use `"minecraft:diamond_ore":""` to display only diamond ores.
+- Priority filters use same format, but as value they accept number - the higher the number, the higher priority. For example:
+  - `"minecraft:block/forge:ores":"1"`
 
 ## Controls:
 
-- **h** - Open the help menu
-- **W A S D** - Move the camera around the scan
-- **arrow left, arrow right** - Change the axis direction (rotate the scan)
-- **arrow up, arrow down** - Change the displayed level (slice of the scan)
-- **enter** - Perform a scan
-- **r** - Toggle automatic direction detection (on/off)
-- **space** - Switch display mode (numeric, relief)
-- **backspace** - Exit the program
+- **h** - Open the help menu.
+- **W A S D** - Move the camera around the scan.
+- **arrow left, arrow right** - Change the axis direction (rotate the scan).
+- **arrow up, arrow down** - Change the displayed level (slice of the scan), in p-numeric change up-down direction.
+- **enter** - Perform a scan.
+- **r** - Toggle automatic direction detection (on/off).
+- **p** - Toggle priority mode when in numeric mode.
+- **space** - Switch display mode (numeric, relief).
+- **backspace** - Exit the program.

@@ -24,43 +24,39 @@ local CanvasClass = _G.canvasLib.CanvasClass
 local WindowClass = {}
 WindowClass.__index = WindowClass
 
---- That class uses for simplify window operations
----@param source table (term or monitor)
----@param xPos number offset
----@param yPos number offset
----@param width number
----@param height number
----@param startVisible boolean
----@param createCanvas boolean
----@param scale number
-function WindowClass:new(source, xPos, yPos, width, height, startVisible, createCanvas, scale, borders)
-	if startVisible == nil then
-		startVisible = true
-	end
-	if createCanvas == nil then
-		createCanvas = true
-	end
-	if scale == nil then
-		scale = 0.5
-	end
+--- Class for simplifying window operations.
+-- @param params table Parameters for the window:
+--   - source (table): The data source (term or monitor).
+--   - xPos (number): The offset on the X axis.
+--   - yPos (number): The offset on the Y axis.
+--   - width (number): The width of the window.
+--   - height (number): The height of the window.
+--   - startVisible (boolean): The visibility of the window upon creation.
+--   - createCanvas (boolean): Whether to create a canvas.
+--   - scale (number): The scale of the window.
+--   - borders (boolean): Whether the window has borders.
+function WindowClass:new(p)
+	p.startVisible = p.startVisible ~= nil and p.startVisible or true
+	p.createCanvas = p.createCanvas ~= nil and p.createCanvas or false
+	p.scale = p.scale ~= nil and p.scale or 0.5
 
-	local sW, sH = source.getSize()
+	local sW, sH = p.source.getSize()
 
 	local obj = {
-		posX = xPos,
-		posY = yPos,
+		posX = p.xPos,
+		posY = p.yPos,
 		dirX = 0,
 		dirY = 0,
-		width = width,
-		height = height,
-		source = source,
-		borders = borders,
+		width = p.width,
+		height = p.height,
+		source = p.source,
+		borders = p.borders,
 		sourceSize = { w = sW, h = sH },
 	}
 
-	obj.win = window.create(source, obj.posX, obj.posY, obj.width, obj.height, startVisible)
+	obj.win = window.create(p.source, obj.posX, obj.posY, obj.width, obj.height, p.startVisible)
 
-	if createCanvas then
+	if p.createCanvas then
 		obj.canvas = CanvasClass:new(obj.win, scale)
 	elseif obj.source.setTextScale then
 		obj.source.setTextScale(scale or 0.5)

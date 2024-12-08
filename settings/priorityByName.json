@@ -1,0 +1,16 @@
+{
+  "minecraft:diamond_ore": "1",
+  "minecraft:emerald_ore": "1",
+  "deepslate_minecraft:diamond_ore": "1",
+  "deepslate_minecraft:emerald_ore": "1",
+  "minecraft:gold_ore": "2",
+  "deepslate_minecraft:gold_ore": "2",
+  "minecraft:iron_ore": "3",
+  "deepslate_minecraft:iron_ore": "3",
+  "minecraft:coal_ore": "4",
+  "deepslate_minecraft:coal_ore": "4",
+  "minecraft:copper_ore": "5",
+  "deepslate_minecraft:copper_ore": "5",
+  "minecraft:redstone_ore": "5",
+  "deepslate_minecraft:redstone_ore": "5"
+}

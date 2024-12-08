@@ -1,4 +1,4 @@
-local function drawLayerBody(winObj, matrixToDraw, offset, layer, customColors, symbolByName)
+local function _drawBody(winObj, matrixToDraw, offset, customColors, getText, handleConflict)
 	local xCenter, yCenter = winObj:getCenter()
 
 	local xC = xCenter
@@ -9,7 +9,9 @@ local function drawLayerBody(winObj, matrixToDraw, offset, layer, customColors, 
 
 	local xSize, ySize = winObj.win.getSize()
 
+	local displayMap = {}
 	local axysBlocks = {}
+
 	for i = 0, xSize do
 		for j = 0, ySize do
 			axysBlocks[i .. j] = nil
@@ -27,43 +29,35 @@ local function drawLayerBody(winObj, matrixToDraw, offset, layer, customColors, 
 		winObj.win.setTextColor(colors.white)
 	end
 
-	if matrixToDraw[layer] then
-		for _, block in pairs(matrixToDraw[layer]) do
+	for layer, blocks in pairs(matrixToDraw) do
+		for _, block in pairs(blocks) do
 			local symX = xCenter + block.x
 			local symY = yCenter + block.z
-			local value
-			local text
+			local cellKey = symX .. ":" .. symY
+			local existingBlock = displayMap[cellKey]
 
-			if block.x == 0 or block.z == 0 then
-				axysBlocks[symX .. symY] = block
-			end
-
-			-- prevent text bugging when fast change layers
-			if block.x == 0 and block.z ~= 0 then
-				text = "|"
-			elseif block.z == 0 and block.x ~= 0 then
-				text = "-"
-			end
-
-			if block.z ~= 0 then
-				value = math.abs(block.x)
+			if existingBlock then
+				-- Решение конфликта
+				displayMap[cellKey] = handleConflict(existingBlock, block)
 			else
-				value = math.abs(block.z)
+				displayMap[cellKey] = block
 			end
-
-			if not text and symbolByName and symbolByName[block.name] then
-				text = symbolByName[block.name]
-			end
-
-			if not text then
-				text = value > 9 and "#" or value
-			end
-
-			tryWriteColored(text, symX, symY, block)
 		end
 	end
 
-	-- garantee that axys are always visible
+	for _, block in pairs(displayMap) do
+		local symX = xCenter + block.x
+		local symY = yCenter + block.z
+
+		if block.x == 0 or block.z == 0 then
+			axysBlocks[symX .. symY] = block
+		end
+
+		local text = getText(block, symbolByName)
+		tryWriteColored(text, symX, symY, block)
+	end
+
+	-- Обеспечиваем отображение осей
 	for i = -xC, xC + 1 do
 		local symX = xCenter + i
 		local symY = yCenter
@@ -108,18 +102,79 @@ function Numeric:setOffset(offset)
 	self.offset = offset
 end
 
--- make that way, because of optimization reasons
 --- draw numeric layer
 ---@param matrixToDraw table scan from scanner, sorted by level
 ---@param layer number
 ---@param customColors table
+---@param symbolByName table
 function Numeric:drawLayer(matrixToDraw, layer, customColors, symbolByName)
 	self.winObj.win.clear()
-	if self.canHandleColors then
-		drawLayerBody(self.winObj, matrixToDraw, self.offset, layer, customColors, symbolByName)
-	else
-		drawLayerBody(self.winObj, matrixToDraw, self.offset, layer, nil, symbolByName)
+	customColors = self.canHandleColors and customColors or nil
+
+	-- text rules
+	local getText = function(block)
+		local text
+		if block.x == 0 and block.z ~= 0 then
+			text = "|"
+		elseif block.z == 0 and block.x ~= 0 then
+			text = "-"
+		elseif symbolByName and symbolByName[block.name] then
+			text = symbolByName[block.name]
+		else
+			local value = (block.z ~= 0) and math.abs(block.x) or math.abs(block.z)
+			text = value > 9 and "#" or value
+		end
+		return text
 	end
+
+	-- ignore conflicts for `drawLayer`
+	local handleConflict = function(existingBlock, newBlock)
+		return existingBlock
+	end
+
+	_drawBody(self.winObj, { [layer] = matrixToDraw[layer] }, self.offset, customColors, getText, handleConflict)
+end
+
+--- draw priority layer
+---@param matrixToDraw table scan from scanner, sorted by level
+---@param customColors table
+---@param symbolByName table
+function Numeric:drawPriorityLayer(matrixToDraw, heightMode, customColors, symbolByName)
+	self.winObj.win.clear()
+	customColors = self.canHandleColors and customColors or nil
+
+	-- text rules
+	local getText = function(block)
+		if block.priority ~= nil then
+			if block.y ~= 0 and heightMode then
+				local distance = math.abs(block.y)
+				if distance > 9 then
+					if heightMode == "up" then
+						return string.char(30)
+					else
+						return string.char(31)
+					end
+				end
+				return distance
+			end
+		elseif symbolByName and symbolByName[block.name] then
+			return symbolByName[block.name]
+		end
+		return "#"
+	end
+
+	local handleConflict = function(existingBlock, newBlock)
+		-- if some block has higher priority
+		if newBlock.priority and (not existingBlock.priority or newBlock.priority > existingBlock.priority) then
+			return newBlock
+		-- if blocks have equals or not have priority
+		elseif newBlock.priority == existingBlock.priority then
+			return (math.abs(newBlock.y) < math.abs(existingBlock.y)) and newBlock or existingBlock
+		end
+		return existingBlock
+	end
+
+	_drawBody(self.winObj, matrixToDraw, self.offset, customColors, getText, handleConflict)
 end
 
 return Numeric

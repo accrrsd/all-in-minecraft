@@ -16,41 +16,47 @@ local scanner = ScannerClass:new("back", filtersHandler.defaults.scanRadius)
 local lastMode = filtersHandler.defaults.mode
 local mode = filtersHandler.defaults.mode
 local autoRotate = filtersHandler.defaults.autoRotate
+local heightMode = filtersHandler.defaults.heightMode
 
 local numericWin = (function()
 	local Xoffset = 1
 	local Yoffset = 4
-	return WindowClass:new(
-		term.current(),
-		Xoffset,
-		Yoffset,
-		26 - Xoffset + 1,
-		20 - Yoffset + 1,
-		mode == "numeric",
-		false,
-		0.5
-	)
+	return WindowClass:new({
+		source = term.current(),
+		xPos = Xoffset,
+		yPos = Yoffset,
+		width = 26 - Xoffset + 1,
+		height = 20 - Yoffset + 1,
+		startVisible = mode == "numeric",
+		createCanvas = false,
+	})
 end)()
 
 local reliefWin = (function()
 	local Xoffset = 1
 	local Yoffset = 4
-	return WindowClass:new(
-		term.current(),
-		Xoffset,
-		Yoffset,
-		26 - Xoffset + 1,
-		20 - Yoffset + 1,
-		mode == "relief",
-		true,
-		0.5
-	)
+	return WindowClass:new({
+		source = term.current(),
+		xPos = Xoffset,
+		yPos = Yoffset,
+		width = 26 - Xoffset + 1,
+		height = 20 - Yoffset + 1,
+		startVisible = mode == "relief",
+		createCanvas = true,
+	})
 end)()
 
 local helpWin = (function()
 	local Xoffset = 1
-	local Yoffset = 3
-	return WindowClass:new(term.current(), Xoffset, Yoffset, 26 - Xoffset + 1, 20 - Yoffset + 1, false, true, 0.5)
+	return WindowClass:new({
+		source = term.current(),
+		xPos = Xoffset,
+		yPos = -1,
+		width = 26 - Xoffset + 1,
+		height = 24,
+		startVisible = false,
+		createCanvas = false,
+	})
 end)()
 
 local numeric = NumericClass:new(numericWin)
@@ -85,8 +91,13 @@ local function updateTitle()
 		term.setCursorPos(width - #text + 1, 3)
 		term.write(text)
 	end
-	term.setCursorPos(1, 3)
-	term.write("Level: " .. matrixHandler.currentLevel)
+	if mode ~= "p-numeric" then
+		term.setCursorPos(1, 3)
+		term.write("Level: " .. matrixHandler.currentLevel)
+	elseif heightMode then
+		term.setCursorPos(1, 3)
+		term.write("dir: " .. heightMode)
+	end
 end
 
 local function drawActiveScreen()
@@ -108,18 +119,22 @@ local function drawActiveScreen()
 		helpWin.win.write("W, A, S, D - move in")
 		helpWin.win.setCursorPos(1, 9)
 		helpWin.win.write("numeric mode")
-		helpWin.win.setCursorPos(1, 11)
-		helpWin.win.write("Arrow keys:")
+		helpWin.win.setCursorPos(1, 10)
+		helpWin.win.write("P - switch to p-numeric")
 		helpWin.win.setCursorPos(1, 12)
-		helpWin.win.write("left-right - rotate matrix")
+		helpWin.win.write("Arrow keys:")
 		helpWin.win.setCursorPos(1, 13)
+		helpWin.win.write("left-right - rotate matrix")
+		helpWin.win.setCursorPos(1, 14)
 		helpWin.win.write("up-down - change level")
 		helpWin.win.setCursorPos(1, 15)
+		helpWin.win.write("or direction in p-numeric")
+		helpWin.win.setCursorPos(1, 17)
 		helpWin.win.write("R - change autoRotate")
-		helpWin.win.setCursorPos(1, 16)
-		helpWin.win.write("current: " .. tostring(autoRotate))
 		helpWin.win.setCursorPos(1, 18)
-		helpWin.win.write("Use h or space to leave")
+		helpWin.win.write("current: " .. tostring(autoRotate))
+		helpWin.win.setCursorPos(1, 19)
+		helpWin.win.write("Use H or space to leave")
 	end
 
 	if rotatedMatrix then
@@ -132,6 +147,13 @@ local function drawActiveScreen()
 			)
 		elseif mode == "relief" then
 			relief:drawLayer(rotatedMatrix, currentLevel)
+		elseif mode == "p-numeric" then
+			numeric:drawPriorityLayer(
+				rotatedMatrix,
+				heightMode,
+				filtersHandler.block_colors_by_name,
+				filtersHandler.symbol_by_name
+			)
 		end
 	end
 end
@@ -142,8 +164,10 @@ local function mainLoop()
 		if key == keys.enter then
 			local scanRes = scanner:scan()
 			if scanRes then
-				scanRes = filtersHandler:filter_by_tags_and_name(scanRes)
+				scanRes = filtersHandler:filterByTagsAndName(scanRes)
+				scanRes = filtersHandler:setPriorityByTagsAndName(scanRes)
 				matrixHandler:loadMatrix(scanner:sortScanByLevel(scanRes))
+
 				if autoRotate and scanner.prevScan then
 					local dir = scanner:determineDirections()
 					if dir then
@@ -160,7 +184,7 @@ local function mainLoop()
 			else
 				mode = "help"
 			end
-			numericWin.win.setVisible(mode == "numeric")
+			numericWin.win.setVisible(mode == "numeric" or mode == "p-numeric")
 			reliefWin.win.setVisible(mode == "relief")
 			helpWin.win.setVisible(mode == "help")
 			updateTitle()
@@ -179,39 +203,67 @@ local function mainLoop()
 			updateTitle()
 			drawActiveScreen()
 		elseif key == keys.up then
-			if matrixHandler:changeLevel(1) then
+			if mode == "p-numeric" then
+				if heightMode ~= "up" then
+					heightMode = "up"
+					updateTitle()
+					drawActiveScreen()
+				end
+			elseif matrixHandler:changeLevel(1) then
 				updateTitle()
 				drawActiveScreen()
 			end
 		elseif key == keys.down then
-			if matrixHandler:changeLevel(-1) then
+			if mode == "p-numeric" then
+				if heightMode ~= "down" then
+					heightMode = "down"
+					updateTitle()
+					drawActiveScreen()
+				end
+			elseif matrixHandler:changeLevel(-1) then
 				updateTitle()
 				drawActiveScreen()
 			end
 		elseif key == keys.w then
-			if mode == "numeric" then
+			if mode == "numeric" or mode == "p-numeric" then
 				numeric:addOffset({ x = 0, y = 3 })
 				drawActiveScreen()
 			end
 		elseif key == keys.a then
-			if mode == "numeric" then
+			if mode == "numeric" or mode == "p-numeric" then
 				numeric:addOffset({ x = 3, y = 0 })
 				drawActiveScreen()
 			end
 		elseif key == keys.s then
-			if mode == "numeric" then
+			if mode == "numeric" or mode == "p-numeric" then
 				numeric:addOffset({ x = 0, y = -3 })
 				drawActiveScreen()
 			end
 		elseif key == keys.d then
-			if mode == "numeric" then
+			if mode == "numeric" or mode == "p-numeric" then
 				numeric:addOffset({ x = -3, y = 0 })
 				drawActiveScreen()
 			end
+		elseif key == keys.p then
+			if mode == "numeric" then
+				mode = "p-numeric"
+				lastMode = mode
+				numericWin.win.setVisible(mode == "p-numeric")
+				reliefWin.win.setVisible(mode == "relief")
+				updateTitle()
+				drawActiveScreen()
+			elseif mode == "p-numeric" then
+				mode = "numeric"
+				lastMode = mode
+				numericWin.win.setVisible(mode == "numeric")
+				reliefWin.win.setVisible(mode == "relief")
+				updateTitle()
+				drawActiveScreen()
+			end
 		elseif key == keys.space then
-			lastMode = mode
 			mode = (mode == "numeric") and "relief" or "numeric"
-			numericWin.win.setVisible(mode == "numeric")
+			lastMode = mode
+			numericWin.win.setVisible(mode == "numeric" or mode == "p-numeric")
 			reliefWin.win.setVisible(mode == "relief")
 			updateTitle()
 			drawActiveScreen()
@@ -227,7 +279,8 @@ term.clear()
 if filtersHandler.defaults.firstScan then
 	local scanRes = scanner:scan()
 	if scanRes then
-		scanRes = filtersHandler:filter_by_tags_and_name(scanRes)
+		scanRes = filtersHandler:filterByTagsAndName(scanRes)
+		scanRes = filtersHandler:setPriorityByTagsAndName(scanRes)
 		matrixHandler:loadMatrix(scanner:sortScanByLevel(scanRes))
 		updateTitle()
 		drawActiveScreen()

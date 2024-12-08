@@ -116,6 +116,7 @@ function MatrixHandler:rotateLevelSortedMatrix(scan, direction)
 					z = z,
 					name = block.name,
 					tags = block.tags,
+					priority = block.priority,
 				})
 			end
 		end

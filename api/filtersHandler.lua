@@ -1,11 +1,11 @@
-local function loadJsonFromFile(filePath)
+local function _loadJsonFromFile(filePath)
 	local file = fs.open(filePath, "r")
 	local content = file.readAll()
 	file.close()
 	return textutils.unserialiseJSON(content)
 end
 
-local function matchColor(stringName)
+local function _matchColor(stringName)
 	if stringName == "white" then
 		return colors.white
 	elseif stringName == "orange" then
@@ -43,10 +43,35 @@ local function matchColor(stringName)
 	end
 end
 
-local function check_block_tags(block_tags_filter, block)
-	if block_tags_filter and block.tags then
+local function _setPriorityByTags(tagsPriorifyFilter, block)
+	local maxPriority = 0
+	if tagsPriorifyFilter and block.tags then
 		for _, tag in pairs(block.tags) do
-			for _, tag2 in pairs(block_tags_filter) do
+			for tag2, priority in pairs(tagsPriorifyFilter) do
+				if tonumber(priority) and tag == tag2 then
+					maxPriority = math.max(maxPriority, priority)
+				end
+			end
+		end
+	end
+	return maxPriority ~= 0 and maxPriority or nil
+end
+
+local function _setPriorityByName(namePriorifyFilter, block)
+	if namePriorifyFilter and block.name then
+		for name, priority in pairs(namePriorifyFilter) do
+			if tonumber(priority) and block.name == name then
+				return priority
+			end
+		end
+	end
+	return nil
+end
+
+local function _checkBlockByTags(blockTagsFilter, block)
+	if blockTagsFilter and block.tags then
+		for _, tag in pairs(block.tags) do
+			for tag2, _ in pairs(blockTagsFilter) do
 				if tag == tag2 then
 					return true
 				end
@@ -56,9 +81,9 @@ local function check_block_tags(block_tags_filter, block)
 	return false
 end
 
-local function check_block_name(block_names_filter, block)
-	if block_names_filter and block.name then
-		for _, name in pairs(block_names_filter) do
+local function _checkBlockByName(blockNamesFilter, block)
+	if blockNamesFilter and block.name then
+		for name, _ in pairs(blockNamesFilter) do
 			if block.name == name then
 				return true
 			end
@@ -72,28 +97,47 @@ FiltersHandler.__index = FiltersHandler
 
 function FiltersHandler:new()
 	local obj = {}
-
 	obj.block_colors_by_name = (function()
-		local data = loadJsonFromFile("settings/colorByName.json")
+		local data = _loadJsonFromFile("settings/colorByName.json")
 		for k, v in pairs(data) do
-			data[k] = matchColor(v)
+			data[k] = _matchColor(v)
 		end
 		return data
 	end)()
-	obj.symbol_by_name = loadJsonFromFile("settings/symbolByName.json")
-	obj.block_tags_filter = loadJsonFromFile("settings/tagsFilter.json")
-	obj.block_names_filter = loadJsonFromFile("settings/nameFilter.json")
-	obj.defaults = loadJsonFromFile("settings/defaults.json")
+	obj.symbol_by_name = _loadJsonFromFile("settings/symbolByName.json")
+	obj.blockTagsFilter = _loadJsonFromFile("settings/tagsFilter.json")
+	obj.blockNamesFilter = _loadJsonFromFile("settings/nameFilter.json")
+	obj.defaults = _loadJsonFromFile("settings/defaults.json")
+	obj.priorityNameFilter = _loadJsonFromFile("settings/priorityByName.json")
+	obj.priorityTagsFilter = _loadJsonFromFile("settings/priorityByTags.json")
 
 	return setmetatable(obj, self)
 end
 
-function FiltersHandler:filter_by_tags_and_name(scan)
+function FiltersHandler:filterByTagsAndName(scan)
 	local filteredScan = {}
+	if not self.blockTagsFilter and not self.blockNamesFilter then
+		return scan
+	end
 	for _, block in pairs(scan) do
-		if check_block_name(self.block_names_filter, block) or check_block_tags(self.block_tags_filter, block) then
+		if _checkBlockByName(self.blockNamesFilter, block) or _checkBlockByTags(self.blockTagsFilter, block) then
 			table.insert(filteredScan, block)
 		end
+	end
+	return next(filteredScan) and filteredScan or scan
+end
+
+function FiltersHandler:setPriorityByTagsAndName(scan)
+	local filteredScan = {}
+	if not self.priorityTagsFilter and not self.priorityNameFilter then
+		return scan
+	end
+	for _, block in pairs(scan) do
+		local priorityByName = _setPriorityByName(self.priorityNameFilter, block) or 0
+		local priorityByTags = _setPriorityByTags(self.priorityTagsFilter, block) or 0
+		local priority = math.max(priorityByName, priorityByTags)
+		block.priority = priority ~= 0 and priority or nil
+		table.insert(filteredScan, block)
 	end
 	return next(filteredScan) and filteredScan or scan
 end
