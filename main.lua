@@ -16,7 +16,6 @@ local scanner = ScannerClass:new("back", filtersHandler.defaults.scanRadius)
 local lastMode = filtersHandler.defaults.mode
 local mode = filtersHandler.defaults.mode
 local autoRotate = filtersHandler.defaults.autoRotate
-local heightMode = filtersHandler.defaults.heightMode
 
 local numericWin = (function()
 	local Xoffset = 1
@@ -94,9 +93,6 @@ local function updateTitle()
 	if mode ~= "p-numeric" then
 		term.setCursorPos(1, 3)
 		term.write("Level: " .. matrixHandler.currentLevel)
-	elseif heightMode then
-		term.setCursorPos(1, 3)
-		term.write("dir: " .. heightMode)
 	end
 end
 
@@ -148,12 +144,7 @@ local function drawActiveScreen()
 		elseif mode == "relief" then
 			relief:drawLayer(rotatedMatrix, currentLevel)
 		elseif mode == "p-numeric" then
-			numeric:drawPriorityLayer(
-				rotatedMatrix,
-				heightMode,
-				filtersHandler.block_colors_by_name,
-				filtersHandler.symbol_by_name
-			)
+			numeric:drawPriorityLayer(rotatedMatrix, filtersHandler.block_colors_by_name, filtersHandler.symbol_by_name)
 		end
 	end
 end
@@ -203,24 +194,12 @@ local function mainLoop()
 			updateTitle()
 			drawActiveScreen()
 		elseif key == keys.up then
-			if mode == "p-numeric" then
-				if heightMode ~= "up" then
-					heightMode = "up"
-					updateTitle()
-					drawActiveScreen()
-				end
-			elseif matrixHandler:changeLevel(1) then
+			if matrixHandler:changeLevel(1) then
 				updateTitle()
 				drawActiveScreen()
 			end
 		elseif key == keys.down then
-			if mode == "p-numeric" then
-				if heightMode ~= "down" then
-					heightMode = "down"
-					updateTitle()
-					drawActiveScreen()
-				end
-			elseif matrixHandler:changeLevel(-1) then
+			if matrixHandler:changeLevel(-1) then
 				updateTitle()
 				drawActiveScreen()
 			end

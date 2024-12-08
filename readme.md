@@ -27,7 +27,6 @@ These settings define the standard value of the variables:
 - **scanRadius** - default is max, max = 16, min = 1, more blocks - more laggy and energy cost scanner is, but pocket computer dont have energy, so it can be max without debuffs.
 - **autoRotate** - default is true, if false autoRotate would be disable from start, sometimes you dont need it, or it can work buggy for you - here you can disable it.
 - **firstScan** - default is true, if true program will immediately scan after start.
-- **heightMode** - default is down, can be up, determine direction for p-numeric display.
 
 ### Filters:
 

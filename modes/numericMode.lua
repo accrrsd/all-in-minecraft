@@ -139,23 +139,25 @@ end
 ---@param matrixToDraw table scan from scanner, sorted by level
 ---@param customColors table
 ---@param symbolByName table
-function Numeric:drawPriorityLayer(matrixToDraw, heightMode, customColors, symbolByName)
+function Numeric:drawPriorityLayer(matrixToDraw, customColors, symbolByName)
 	self.winObj.win.clear()
 	customColors = self.canHandleColors and customColors or nil
 
 	-- text rules
 	local getText = function(block)
 		if block.priority ~= nil then
-			if block.y ~= 0 and heightMode then
-				local distance = math.abs(block.y)
-				if distance > 9 then
-					if heightMode == "up" then
+			if block.y ~= 0 then
+				local Ydistance = math.abs(block.y)
+				if Ydistance > 9 then
+					if block.y > 0 then
 						return string.char(30)
 					else
 						return string.char(31)
 					end
 				end
-				return distance
+				return Ydistance
+			else
+				return string.char(127)
 			end
 		elseif symbolByName and symbolByName[block.name] then
 			return symbolByName[block.name]
