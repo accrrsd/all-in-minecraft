@@ -2,5 +2,11 @@
   "minecraft:lava": "L",
   "minecraft:water": "W",
   "minecraft:fire": "F",
-  "minecraft:bedrock": "B"
+  "minecraft:bedrock": "B",
+  "minecraft:ancient_debris":"D",
+  "minecraft:amethyst_block":"A",
+  "minecraft:lapis_ore":"U",
+  "minecraft:deepslate_lapis_ore":"U",
+  "minecraft:diamond_ore":"D",
+  "minecraft:deepslate_diamond_ore":"D"
 }
