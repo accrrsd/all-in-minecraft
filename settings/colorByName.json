@@ -1,4 +1,8 @@
 {
+  "minecraft:ancient_debris":"lightBlue",
+  "minecraft:amethyst_block":"pink",
+  "minecraft:lapis_ore":"blue",
+  "minecraft:deepslate_lapis_ore":"blue",
   "minecraft:iron_ore": "lightGray",
   "minecraft:deepslate_iron_ore": "lightGray",
   "minecraft:gold_ore": "orange",
